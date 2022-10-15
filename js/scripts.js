@@ -138,14 +138,6 @@ window.addEventListener("mousemove", function (e) {
     }
 });
 
-const sphereMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(0.4, 4, 2),
-    new THREE.MeshBasicMaterial({
-        wireframe: true,
-        color: 0xffffff,
-    })
-);
-
 const startBox = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
     new THREE.MeshBasicMaterial({ color: 0x00FF00 })
@@ -156,12 +148,12 @@ const endBox = new THREE.Mesh(
 );
 const wallBox = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial({ color: 0xffffff })
+    new THREE.MeshBasicMaterial({ color: 0xFFFFFF })
 );
 
-const pathBox = new THREE.Mesh(
+const finderBox = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial({ color: 0xff00ff })
+    new THREE.MeshBasicMaterial({ color: 0xFF00FF })
 );
 
 const solutionBox = new THREE.Mesh(
@@ -169,16 +161,19 @@ const solutionBox = new THREE.Mesh(
     new THREE.MeshBasicMaterial({ color: 0x00FF00 })
 );
 
+
 let objects = [];
 let boxes = [];
-let walls = [];
-let solutions = [];
-let pathBlocks = [];
+let paths = null;
 let startBoxPosition = null;
 let endBoxPosition = null;
-window.addEventListener("mousedown", async function () {
+let wallId = 0;
+let solId = 0;
+let solutionDrawn = false;
+window.addEventListener('click', async function () {
+    console.log(scene);
     function boxExists(bs, mesh_x, mesh_z) {
-        if (bs.length == 0) {
+        if (boxes.length == 0) {
             return false;
         }
         for (let i = 0; i < bs.length; i++) {
@@ -189,7 +184,7 @@ window.addEventListener("mousedown", async function () {
         return false;
     }
 
-    function searchBox(bs, mesh_x, mesh_z) {
+    function boxIndex(bs, mesh_x, mesh_z) {
         for (let i = 0; i < bs.length; i++) {
             if (bs[i].position.x == mesh_x && bs[i].position.z == mesh_z) {
                 return i;
@@ -198,107 +193,77 @@ window.addEventListener("mousedown", async function () {
         return -1;
     }
 
-    function isStart(b) {
-        return (b.position.x == startBoxPosition[0] && b.position.z == startBoxPosition[1]);
+    function isStart(mesh_x, mesh_z) {
+        return (mesh_x == startBoxPosition[0] && mesh_z == startBoxPosition[1]);
     }
 
-    function isEnd(b) {
-        return (b.position.x == endBoxPosition[0] && b.position.z == endBoxPosition[1]);
+    function isEnd(mesh_x, mesh_z) {
+        return (mesh_x == endBoxPosition[0] && mesh_z == endBoxPosition[1]);
     }
-    async function raise(
 
-    ) {
-        console.log("Yo");
-        await sleep(1000);
+    function removeBox(mesh_x, mesh_z) {
+        boxes.forEach(box => {
+            if (box.position.x == mesh_x && box.position.z == mesh_z) {
+                scene.remove(box);
+                boxes = boxes.splice(boxes.indexOf(box), 1);
+                return box.name;
+            }
+        });
     }
 
     if (intersects.length > 0) {
-        if (!boxExists(boxes, highlightMesh.position.x, highlightMesh.position.z)) {
+        if (!(boxExists(boxes, highlightMesh.position.x, highlightMesh.position.z))) {
             let boxClone = null;
-            if (startBoxPosition == null) {
-                boxClone = startBox.clone();
+            if (startBoxPosition == null) { // must add startBox
+                boxClone = startBox.clone()
                 boxClone.position.copy(highlightMesh.position);
-                boxClone.position.y -= 0.5;
-                let geo = new THREE.EdgesGeometry(boxClone.geometry);
-                let mat = new THREE.LineBasicMaterial({ color: 0x000000 });
-                let wireframe = new THREE.LineSegments(geo, mat);
-                boxClone.add(wireframe);
+                boxClone.position.y += 0.5;
                 boxClone.name = "START";
-                scene.add(boxClone);
+                boxClone.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxClone.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
                 boxes.push(boxClone);
-                if (startBoxPosition == null) {
-                    startBoxPosition = [boxClone.position.x, boxClone.position.z];
-                    for (let p = 0; p < 100; p++) {
-                        await sleep(1000 / 400);
-                        scene.getObjectByName("START").position.y += 0.01;
-                    }
-                    /*for (let i = 0; i < 12; i ++) {
-                        scene.getObjectByName("START").rotation.set(new THREE.Vector3( 0, 0, 0.2));
-                        await sleep(1000 / 400);
-                    }*/
-                }
-                highlightMesh.material.color.setHex(0xff0000);
-            } else if (endBoxPosition == null) {
-                boxClone = endBox.clone();
+                scene.add(boxClone);
+                startBoxPosition = [boxClone.position.x, boxClone.position.z];
+            } else if (endBoxPosition == null) { // must add endBox
+                boxClone = endBox.clone()
                 boxClone.position.copy(highlightMesh.position);
-                boxClone.position.y -= 0.5;
-                let geo = new THREE.EdgesGeometry(boxClone.geometry);
-                let mat = new THREE.LineBasicMaterial({ color: 0x000000 });
-                let wireframe = new THREE.LineSegments(geo, mat);
-                boxClone.add(wireframe);
+                boxClone.position.y += 0.5;
                 boxClone.name = "END";
-                scene.add(boxClone);
+                boxClone.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxClone.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
                 boxes.push(boxClone);
-                if (endBoxPosition == null) {
-                    endBoxPosition = [boxClone.position.x, boxClone.position.z];
-                    for (let p = 0; p < 100; p++) {
-                        await sleep(1000 / 300);
-                        scene.getObjectByName("END").position.y += 0.01;
-                    }
-                }
-                console.log(scene);
-                highlightMesh.material.color.setHex(0xff0000);
-            } else {
-                boxClone = wallBox.clone();
+                scene.add(boxClone);
+                endBoxPosition = [boxClone.position.x, boxClone.position.z];
+            } else { // free to add wallBox
+                boxClone = wallBox.clone()
                 boxClone.position.copy(highlightMesh.position);
-                boxClone.position.y -= 0.5;
-                let geo = new THREE.EdgesGeometry(boxClone.geometry);
-                let mat = new THREE.LineBasicMaterial({ color: 0x000000 });
-                let wireframe = new THREE.LineSegments(geo, mat);
-                boxClone.add(wireframe);
-                boxClone.name = "WALL" + (walls.length + 1);
-                scene.add(boxClone);
+                boxClone.position.y += 0.5;
+                boxClone.name = "WALL" + wallId;
+                boxClone.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxClone.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
                 boxes.push(boxClone);
-                walls.push(boxClone);
-                for (let p = 0; p < 100; p++) {
-                    await sleep(1000 / 300);
-                    scene.getObjectByName(("WALL" + (walls.length))).position.y += 0.01;
-                }
-                highlightMesh.material.color.setHex(0xff0000);
-                console.log(walls);
+                scene.add(boxClone);
+                wallId++;
             }
         } else {
-            let index = searchBox(boxes, highlightMesh.position.x, highlightMesh.position.z);
-            let index2 = searchBox(walls, highlightMesh.position.x, highlightMesh.position.z);
-            let deleteBox = boxes[index];
+            let index = boxIndex(boxes, highlightMesh.position.x, highlightMesh.position.z);
+            let boxToDelete = boxes[index];
             if (index != -1) {
                 boxes.splice(index, 1);
-                scene.remove(deleteBox);
+                scene.remove(boxToDelete);
+            } else {
+                console.log("Tried to get a box that doesn't exist . . .");
             }
-            if (index2 != -1)
-                walls.splice(index2, 1);
-            highlightMesh.material.color.setHex(0x808080);
-            if (startBoxPosition != null && isStart(deleteBox)) {
+            if (startBoxPosition != null && isStart(highlightMesh.position.x, highlightMesh.position.z)) {
                 startBoxPosition = null;
             }
-            if (endBoxPosition != null && isEnd(deleteBox)) {
+            if (endBoxPosition != null && isEnd(highlightMesh.position.x, highlightMesh.position.z)) {
                 endBoxPosition = null;
             }
+
         }
     }
 });
 
-async function animate(time) {
+
+function animate(time) {
     highlightMesh.material.opacity = 1 + Math.sin(time / 120);
     objects.forEach(function (object) {
         object.rotation.x = time / 1;
@@ -317,66 +282,40 @@ window.addEventListener("resize", function () {
 });
 
 window.addEventListener('keypress', (event) => {
-    console.log(event.code);
-    if (event.code == "Enter") {
+    let code = event.code;
+    if (code == "Enter") {
         solve();
-    } else if (event.code == "KeyR") {
+    } else if (code == "KeyR") {
         reset();
+    } else if (code == "KeyC") {
+        clearSolution();
     }
-}, false);
-
-async function reset() {
-    scene.remove(scene.getObjectByName("FINDER"));
-    await sleep(1000 / 30);
-    scene.remove(scene.getObjectByName("START"));
-    await sleep(1000 / 30);
-    scene.remove(scene.getObjectByName("END"));
-    for(let i = 0; i < walls.length; i++) {
-        await sleep(1000 / 30);
-        scene.remove(scene.getObjectByName("WALL" + (i + 1)));
-    } 
-    for(let i = 0; i < pathBlocks.length; i++) {
-        await sleep(1000 / 30);
-        scene.remove(scene.getObjectByName("PATH" + (i + 1)));
-    }
-    for(let i = 0; i < solutions.length + 1; i++) {
-        await sleep(1000 / 30);
-        scene.remove(scene.getObjectByName("SOL" + (i + 1)));
-    }
-    startBoxPosition = null;
-    endBoxPosition = null;
-    walls = [];
-    pathBlocks = [];
-    solutions = [];
-    objects = []
-    boxes = [];
-    console.log(scene);
-}
+});
 
 async function solve() {
-
     function getWalls() {
         let wallCords = [];
-        walls.forEach(box => {
-            wallCords.push([box.position.x, box.position.z]);
-        });
+        for (let i = 0; i < boxes.length; i++) {
+            if (boxes[i].name.substring(0,4) == "WALL") {
+                wallCords.push([boxes[i].position.x, boxes[i].position.z]);
+            }
+        }
         return wallCords;
     }
 
-    function isIn(coords, cord) {
-        for (let i = 0; i < coords.length; i++) {
-            if (coords[i][0] == cord[0] && coords[i][1] == cord[1]) {
+    function isWall(cord) {
+        let cords = getWalls();
+        for (let i = 0; i < cords.length; i++) {
+            if (cord[0] == cords[i][0] && cord[1] == cords[i][1]) {
                 return true;
             }
         }
         return false;
     }
 
-    function isWall(cord) {
-        console.log(cord);
-        wallCords = getWalls()
-        for (let i = 0; i < wallCords.length; i++) {
-            if (wallCords[i][0] == cord[0] && wallCords[i][1] == cord[1]) {
+    function isIn(cords, cord) {
+        for (let i = 0; i < cords.length; i++) {
+            if (cord[0] == cords[i][0] && cord[1] == cords[i][1]) {
                 return true;
             }
         }
@@ -384,42 +323,15 @@ async function solve() {
     }
 
     function manhattan(c1, c2) {
-        return Math.abs(c1[0] - c2[0]) + Math.abs(c1[1] + c2[1]);
-    }
-
-    async function flash(color) {
-        let grid_error = scene.getObjectByName("GRID");
-        if (color == "RED") {
-            for (let j = 0; j < 4; j++) {
-                for (let i = 0; i < 16; i++) {
-                    await sleep(1000 / 1500);
-                    grid_error.material.color = new THREE.Color(`rgb(255, ${255 - i * 16}, ${255 - i * 16})`);
-                }
-                for (let i = 0; i < 16; i++) {
-                    await sleep(1000 / 150);
-                    grid_error.material.color = new THREE.Color(`rgb(255, ${0 + i * 16}, ${0 + i * 16})`);
-                }
-            }
-        } else if (color == "GREEN") {
-            for (let j = 0; j < 4; j++) {
-                for (let i = 0; i < 16; i++) {
-                    await sleep(1000 / 1500);
-                    grid_error.material.color = new THREE.Color(`rgb(${255 - i * 16}, 255, ${255 - i * 16})`);
-                }
-                for (let i = 0; i < 16; i++) {
-                    await sleep(1000 / 150);
-                    grid_error.material.color = new THREE.Color(`rgb( ${0 + i * 16}, 255, ${0 + i * 16})`);
-                }
-            }
-        }
+        return Math.abs(c1[0] - c2[0]) + Math.abs(c1[1] - c1[1]);
     }
 
     function aStar() {
         const visited = [];
-        const pQueue = new PriorityQueue();
-        pQueue.enqueue([[startBoxPosition[0], startBoxPosition[1]], [], 0], 0);
-        while (!pQueue.isEmpty()) {
-            let tmp = pQueue.dequeue().element;
+        const Q = new PriorityQueue();
+        Q.enqueue([[startBoxPosition[0], startBoxPosition[1]], [], 0], 0);
+        while (!Q.isEmpty()) {
+            let tmp = Q.dequeue().element;
             let state = tmp[0];
             let actions = tmp[1];
             let cost = tmp[2];
@@ -437,68 +349,125 @@ async function solve() {
                     if (x1 <= 9.5 && x1 >= -9.5) {
                         heuristicCost = manhattan(endBoxPosition, [x1, z]);
                         let updatedActions = actions.concat([[x1, z]]);
-                        pQueue.enqueue([[x1, z], updatedActions, cost + 1], cost + 1 + heuristicCost);
+                        Q.enqueue([[x1, z], updatedActions, cost + 1], cost + 1 + heuristicCost);
                     }
                     if (x2 <= 9.5 && x2 >= -9.5) {
                         heuristicCost = manhattan(endBoxPosition, [x2, z]);
                         let updatedActions = actions.concat([[x2, z]]);
-                        pQueue.enqueue([[x2, z], updatedActions, cost + 1], cost + 1 + heuristicCost);
+                        Q.enqueue([[x2, z], updatedActions, cost + 1], cost + 1 + heuristicCost);
                     }
                     if (z1 <= 9.5 && z1 >= -9.5) {
                         heuristicCost = manhattan(endBoxPosition, [x, z1]);
                         let updatedActions = actions.concat([[x, z1]]);
-                        pQueue.enqueue([[x, z1], updatedActions, cost + 1], cost + 1 + heuristicCost);
+                        Q.enqueue([[x, z1], updatedActions, cost + 1], cost + 1 + heuristicCost);
                     }
                     if (z2 <= 9.5 && z2 >= -9.5) {
                         heuristicCost = manhattan(endBoxPosition, [x, z2]);
                         let updatedActions = actions.concat([[x, z2]]);
-                        pQueue.enqueue([[x, z2], updatedActions, cost + 1], cost + 1 + heuristicCost);
+                        Q.enqueue([[x, z2], updatedActions, cost + 1], cost + 1 + heuristicCost);
                     }
                 }
             }
         }
-        console.log("NO SOLUTION!");
         return -1;
     }
-    if (startBoxPosition != null && endBoxPosition != null) {
+    if (startBoxPosition != null && endBoxPosition != null && !solutionDrawn) {
         paths = aStar();
-        console.log(paths);
         if (paths != -1) {
-            let finderBlock = pathBox.clone();
-            finderBlock.name = "FINDER";
-            finderBlock.position.x = startBoxPosition[0];
-            finderBlock.position.z = startBoxPosition[1];
-            finderBlock.position.y += 0.5;
-            let geo = new THREE.EdgesGeometry(finderBlock.geometry);
-            let mat = new THREE.LineBasicMaterial({ color: 0x000000 });
-            let wireframe = new THREE.LineSegments(geo, mat);
-            finderBlock.add(wireframe);
-            scene.add(finderBlock);
+            let finder = finderBox.clone();
+            finder.name = "FINDER";
+            finder.position.y += 0.5;
+            finder.add(new THREE.LineSegments(new THREE.EdgesGeometry(finder.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
+            boxes.push(finder);
+            scene.add(finder);
             for (let i = 0; i < paths.length; i++) {
                 scene.getObjectByName("FINDER").position.setX(paths[i][0]);
-                scene.getObjectByName("FINDER").position.setZ(paths[i][1]);             
+                scene.getObjectByName("FINDER").position.setZ(paths[i][1]);
                 await sleep(125);
             }
             for (let i = paths.length - 1; i > -1; i--) {
                 let solution = solutionBox.clone();
-                solution.name = "SOL" + (paths.length - i + 1);
+                solution.name = "SOL" + ++solId;
+                console.log(paths[i])
                 solution.position.x = paths[i][0];
                 solution.position.z = paths[i][1];
                 solution.position.y += 0.5;
-                let geo = new THREE.EdgesGeometry(solution.geometry);
-                let mat = new THREE.LineBasicMaterial({ color: 0x000000 });
-                let wireframe = new THREE.LineSegments(geo, mat);
-                solution.add(wireframe);
-                solutions.push(solution);
+                solution.add(new THREE.LineSegments(new THREE.EdgesGeometry(solution.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
                 boxes.push(solution);
                 scene.add(solution);
                 await sleep(125);
             }
+            solutionDrawn = true;
             flash("GREEN");
         } else {
             flash("RED");
         }
     } else {
         flash("RED");
+    }
+}
+
+async function reset() {
+    for (let i = 0; i < boxes.length; i++) {
+        scene.remove(boxes[i]);
+        await sleep(125);
+    }
+    objects = [];
+    boxes = [];
+    paths = null;
+    startBoxPosition = null;
+    endBoxPosition = null;
+    wallId = 0;
+    solId = 0;
+    solutionDrawn = false;
+}
+
+async function clearSolution() {
+    if (paths != null) {
+        let finderIndex = -1;
+        let solutionIndicies = [];
+        for (let i = 0; i < boxes.length; i++) {
+            if (boxes[i].name == "FINDER") {
+                scene.remove(scene.getObjectByName(boxes[i].name));
+            } else if (boxes[i].name.substring(0, 3) == "SOL") {
+                scene.remove(scene.getObjectByName(boxes[i].name));
+            }
+        }
+        boxes = boxes.filter(function(box) {
+            return box.name.substring(0, 3) !== "SOL";
+        });
+        boxes = boxes.filter(function(box) {
+            return box.name !== "FINDER";
+        });
+        solutionDrawn = false;
+    } else {
+        flash("RED");
+    }
+}
+
+async function flash(color) {
+    let grid_error = scene.getObjectByName("GRID");
+    if (color == "RED") {
+        for (let j = 0; j < 4; j++) {
+            for (let i = 0; i < 16; i++) {
+                await sleep(1000 / 1500);
+                grid_error.material.color = new THREE.Color(`rgb(255, ${255 - i * 16}, ${255 - i * 16})`);
+            }
+            for (let i = 0; i < 16; i++) {
+                await sleep(1000 / 150);
+                grid_error.material.color = new THREE.Color(`rgb(255, ${0 + i * 16}, ${0 + i * 16})`);
+            }
+        }
+    } else if (color == "GREEN") {
+        for (let j = 0; j < 4; j++) {
+            for (let i = 0; i < 16; i++) {
+                await sleep(1000 / 1500);
+                grid_error.material.color = new THREE.Color(`rgb(${255 - i * 16}, 255, ${255 - i * 16})`);
+            }
+            for (let i = 0; i < 16; i++) {
+                await sleep(1000 / 150);
+                grid_error.material.color = new THREE.Color(`rgb( ${0 + i * 16}, 255, ${0 + i * 16})`);
+            }
+        }
     }
 }
