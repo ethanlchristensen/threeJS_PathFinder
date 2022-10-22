@@ -24,10 +24,10 @@ Pressing the Enter key will initiate the path-finding algorithm. If either the s
 
 -  ```R```Reset the plane and remove all blocks. <br/>
 -  ```C```Clear the populated solution without removing walls or start/end blocks.<br/>
--Flashes red if there is no solution on the board.<br/>
--Once complete, it will intiate a green wave across the board.<br/>
+>Flashes red if there is no solution on the board.<br/>
+>Once complete, it will intiate a green wave across the board.<br/>
 -  ```W```Will iniate a multi color wave such that the start block is present.<br/>
--Will flash Red otherwise.<br/>
+>Will flash Red otherwise.<br/>
 
 The mouse scroll wheel can be used to zoom in and out.
 
