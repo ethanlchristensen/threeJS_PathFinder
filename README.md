@@ -20,7 +20,8 @@ This will launch the index.html on ```localhost:1234```
 ## Usage
 The system is relatively intuitive to use. Hovering over the plane will highlight the current square you are on. Clicking will place a block. If the start block (colored green) isn't present, it will be the next one placed. If the end block (colored red) isn't present, it will be the next placed. After this, each block placed will be a wall block (colored white).
 
-Pressing the Enter key will initiate the path-finding algorithm. If either the start or end block is not placed, the plane will flash red and the pathfinding algorithm will not execute. If a path doesn't exist between the start and end block, the plane will flash red. If a solution is found, a path will be drawn between the two blocks and the plane will flash green. 
+```Enter```<br/>
+>Initiates the path-finding algorithm. If either the start or end block is not placed, the plane will flash red and the pathfinding algorithm will not execute. If a path doesn't exist between the start and end block, the plane will flash red. If a solution is found, a path will be drawn between the two blocks and the plane will flash green. 
 
 ```R```<br/>
 >Reset the plane and remove all blocks.<br/>
