@@ -33,6 +33,6 @@ The mouse scroll wheel can be used to zoom in and out.
 
 Clicking and holding, and moving the mouse will allow you to rotate the plane in any direction.
 
-In the script.js, at the top of the file is a parameter called "N" for board size, and "ani" to toggle the animations.
+In the script.js, at the top of the file is a parameter called ```N``` for board size, and ```ani``` to toggle the animations.
 ## Current Version
 Currently, the program uses an A* path-finding algorithm. Future implementation will allow for the selection of different path-finding algorithms as well as visualizing the fringe.
