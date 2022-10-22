@@ -22,11 +22,14 @@ The system is relatively intuitive to use. Hovering over the plane will highligh
 
 Pressing the Enter key will initiate the path-finding algorithm. If either the start or end block is not placed, the plane will flash red and the pathfinding algorithm will not execute. If a path doesn't exist between the start and end block, the plane will flash red. If a solution is found, a path will be drawn between the two blocks and the plane will flash green. 
 
--  ```R```Reset the plane and remove all blocks. <br/>
--  ```C```Clear the populated solution without removing walls or start/end blocks.<br/>
+```R```<br/>
+>Reset the plane and remove all blocks.<br/>
+```C```<br/>
+>Clear the populated solution without removing walls or start/end blocks.<br/>
 >Flashes red if there is no solution on the board.<br/>
 >Once complete, it will intiate a green wave across the board.<br/>
--  ```W```Will iniate a multi color wave such that the start block is present.<br/>
+```W```<br/>
+>Will iniate a multi color wave such that the start block is present.<br/>
 >Will flash Red otherwise.<br/>
 
 The mouse scroll wheel can be used to zoom in and out.
