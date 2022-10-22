@@ -4,14 +4,18 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 
-const ThreeMeshUI = require('three-mesh-ui');
-const t = true;
-const f = false;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-let N = 10;
-let l = -(N / 2) + 0.5;
-let u = N / 2 - 0.5
-let ani = t;
+
+const N = 10; // NxN board size
+const ani = true; // enable / disable animations
+const paintTrail = false; // enable / disable paint trails for rolling finder block
+
+let l = -(N / 2) + 0.5; // lower bound
+let u = N / 2 - 0.5; // upper bound
+
+
+
+// Priority Queue implentation for A* Search
 class QElement {
     constructor(element, priority) {
         this.element = element;
@@ -73,35 +77,6 @@ camera.position.set(10, 15, -22);
 orbit.update();
 
 scene.background = new THREE.Color(`rgb(10, 10, 10)`);
-
-/*const container = new ThreeMeshUI.Block({
-    width: 1.2,
-    height: 0.7,
-    padding: 0.2,
-    fontFamily: './assets/Roboto-msdf.json',
-    fontTexture: './assets/Roboto-msdf.png',
-});
-
-const text = new ThreeMeshUI.Text({
-    content: "Some text to be displayed"
-});
-container.add(text);
-container.position.set(0, 3, 0);
-scene.add(container);
-ThreeMeshUI.update();*/
-
-
-/*const loader = new GLTFLoader();
-
-loader.load('static/funko_test_model.glb', function (gltf) {
-
-    scene.add(gltf.scene);
-
-}, undefined, function (error) {
-
-    console.error(error);
-
-});*/
 
 const planeMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(N, N),
@@ -171,6 +146,7 @@ window.addEventListener("mousemove", function (e) {
     }
 });
 
+// Defining the different type of boxes
 const startBox = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
     new THREE.MeshBasicMaterial({ color: 0x00FF00 })
@@ -204,8 +180,6 @@ const cornerHideBox = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
     new THREE.MeshBasicMaterial({ color: 0x000000 })
 );
-//cornerHideBox.add(new THREE.LineSegments(new THREE.EdgesGeometry(cornerHideBox.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF })));
-
 
 const waveBox = new THREE.Mesh(
     new THREE.BoxGeometry(0.7, 0.5, 0.7),
@@ -216,6 +190,8 @@ const waveBox = new THREE.Mesh(
     })
 );
 waveBox.add(new THREE.LineSegments(new THREE.EdgesGeometry(waveBox.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
+
+// Adding border around the board to hide animations
 if (N < 21) {
     let l2 = l;
     let hideId = 0;
@@ -267,6 +243,8 @@ if (N < 21) {
         scene.add(c4);
     }
 }
+
+// Intialization
 let objects = [];
 let boxes = [];
 let paths = null;
@@ -275,6 +253,8 @@ let endBoxPosition = null;
 let wallId = 0;
 let solId = 0;
 let solutionDrawn = false;
+
+// Creates a box when a tile is clicked. Start and End boxes have priority
 window.addEventListener('click', async function () {
     console.log(scene);
     function boxExists(bs, mesh_x, mesh_z) {
@@ -359,7 +339,7 @@ window.addEventListener('click', async function () {
                     }
                 }
                 scene.getObjectByName(boxClone.name).position.y = 0.45;
-            } else {
+            } else { // removing a block
                 let index = boxIndex(boxes, highlightMesh.position.x, highlightMesh.position.z);
                 let boxToDelete = boxes[index];
                 if (index != -1) {
@@ -386,7 +366,7 @@ window.addEventListener('click', async function () {
     }
 });
 
-
+// Animate the highlight mesh
 function animate(time) {
     highlightMesh.material.opacity = 1 + Math.sin(time / 120);
     objects.forEach(function (object) {
@@ -394,18 +374,19 @@ function animate(time) {
         object.rotation.z = time / 1;
         object.position.y = 0.5 + 0.5 * Math.abs(Math.sin(time / 1000));
     });
-    //wscene.background = new THREE.Color(`rgb(${(Math.floor(Math.random() * 125) * Math.sin(time / 120)) % 255}, ${(Math.floor(Math.random() * 125) * Math.sin(time / 120)) % 255}, ${(Math.floor(Math.random() * 125) * Math.sin(time / 120)) % 255})`); 
     renderer.render(scene, camera);
 }
 
 renderer.setAnimationLoop(animate);
 
+// Register window resizing
 window.addEventListener("resize", function () {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+// Keyboard controls
 window.addEventListener('keypress', (event) => {
     let code = event.code;
     if (code == "Enter") {
@@ -427,6 +408,7 @@ window.addEventListener('keypress', (event) => {
     }
 });
 
+// Solve the maze
 async function solve() {
     function getWalls() {
         let wallCords = [];
@@ -521,6 +503,8 @@ async function solve() {
         }
 
     }
+
+    // After solving, draw the path returned by astar
     if (startBoxPosition != null && endBoxPosition != null && !solutionDrawn) {
         paths = aStar();
         if (paths != -1) {
@@ -541,43 +525,26 @@ async function solve() {
                     await rotateCube(getDirection(startBoxPosition, paths[0]), finder);
                 } else {
                     await rotateCube(getDirection(paths[i], paths[i + 1]), finder);
-                    let solution = solutionBox.clone();
-                    solution.name = "SOL" + ++solId;
-                    console.log(paths[i])
-                    solution.position.x = paths[i][0];
-                    solution.position.z = paths[i][1];
-                    solution.position.y -= 0.5;
-                    solution.add(new THREE.LineSegments(new THREE.EdgesGeometry(solution.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
-                    boxes.push(solution);
-                    scene.add(solution);
-                    if (ani) {
-                        for (let j = 0; j < 7; j++) {
-                            scene.getObjectByName(solution.name).position.y += 0.15;
-                            await sleep(1);
+                    if (paintTrail) { // If enabled draw a paint trail
+                        let solution = solutionBox.clone();
+                        solution.name = "SOL" + ++solId;
+                        console.log(paths[i])
+                        solution.position.x = paths[i][0];
+                        solution.position.z = paths[i][1];
+                        solution.position.y -= 0.5;
+                        solution.add(new THREE.LineSegments(new THREE.EdgesGeometry(solution.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
+                        boxes.push(solution);
+                        scene.add(solution);
+                        if (ani) {
+                            for (let j = 0; j < 7; j++) {
+                                scene.getObjectByName(solution.name).position.y += 0.15;
+                                await sleep(1);
+                            }
+                            scene.getObjectByName(solution.name).position.y = 0.45;
                         }
-                        scene.getObjectByName(solution.name).position.y = 0.45;
                     }
                 }
             }
-
-            /*for (let i = 0; i < paths.length; i++) {
-                let solution = solutionBox.clone();
-                solution.name = "SOL" + ++solId;
-                console.log(paths[i])
-                solution.position.x = paths[i][0];
-                solution.position.z = paths[i][1];
-                solution.position.y -= 0.5;
-                solution.add(new THREE.LineSegments(new THREE.EdgesGeometry(solution.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
-                boxes.push(solution);
-                scene.add(solution);
-                if (ani) {
-                    for (let j = 0; j < 13; j++) {
-                        scene.getObjectByName(solution.name).position.y += 0.08;
-                        await sleep(1);
-                    }
-                }
-                solution.position.y = 0.45;
-            }*/
             solutionDrawn = true;
             if (!ani) {
                 flash("GREEN");
@@ -590,6 +557,7 @@ async function solve() {
     }
 }
 
+// Function to clear board
 async function reset() {
     if (ani) {
         async function recurse(i) {
@@ -619,6 +587,7 @@ async function reset() {
     solutionDrawn = false;
 }
 
+// Function to clear a solution-state if it is present
 async function clearSolution() {
     if (paths != null) {
         if (ani) {
@@ -631,7 +600,7 @@ async function clearSolution() {
                         scene.getObjectByName(boxes[i].name).position.y -= 0.08;
                     }
                     scene.remove(scene.getObjectByName(boxes[i].name));
-                } 
+                }
             }
             boxes = boxes.filter(function (box) {
                 return box.name.substring(0, 3) !== "SOL";
@@ -671,6 +640,7 @@ async function clearSolution() {
     }
 }
 
+// Given a color (RED / GREEN), the board will flash this color
 async function flash(color) {
     let grid_error = scene.getObjectByName("GRID");
     let plane_error = scene.getObjectByName("PLANE");
@@ -703,6 +673,7 @@ async function flash(color) {
     }
 }
 
+// Will produce a wave visual given a x, z coordinate, type can be GREEN or RANDOM
 async function wave(x, z, type) {
     let waveId = 0;
     let visited = [];
@@ -770,7 +741,8 @@ async function wave(x, z, type) {
     dfs(x, z, 1);
 }
 
-
+// Given a box, and a direction, the function will rotate the box about its edge to the next tile
+// Will also update the boxes location. If a box already exists in the area, board will flash red
 async function rotateCube(direction, box) {
     function inVisited(vs, x, z) {
         for (let i = 0; i < vs.length; i++) {
