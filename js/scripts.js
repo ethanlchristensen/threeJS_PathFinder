@@ -1,12 +1,17 @@
-import { CloudSearch, ConnectContactLens, WorkMailMessageFlow } from "aws-sdk";
 import * as THREE from "three";
 import { GridHelper } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 
+const ThreeMeshUI = require('three-mesh-ui');
+const t = true;
+const f = false;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-let N = 20;
+let N = 10;
 let l = -(N / 2) + 0.5;
 let u = N / 2 - 0.5
+let ani = t;
 class QElement {
     constructor(element, priority) {
         this.element = element;
@@ -67,6 +72,37 @@ camera.position.set(10, 15, -22);
 
 orbit.update();
 
+scene.background = new THREE.Color(`rgb(10, 10, 10)`);
+
+/*const container = new ThreeMeshUI.Block({
+    width: 1.2,
+    height: 0.7,
+    padding: 0.2,
+    fontFamily: './assets/Roboto-msdf.json',
+    fontTexture: './assets/Roboto-msdf.png',
+});
+
+const text = new ThreeMeshUI.Text({
+    content: "Some text to be displayed"
+});
+container.add(text);
+container.position.set(0, 3, 0);
+scene.add(container);
+ThreeMeshUI.update();*/
+
+
+/*const loader = new GLTFLoader();
+
+loader.load('static/funko_test_model.glb', function (gltf) {
+
+    scene.add(gltf.scene);
+
+}, undefined, function (error) {
+
+    console.error(error);
+
+});*/
+
 const planeMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(N, N),
     new THREE.MeshBasicMaterial({
@@ -76,14 +112,14 @@ const planeMesh = new THREE.Mesh(
     })
 );
 planeMesh.rotateX(-Math.PI / 2);
-planeMesh.position.y -= 0.05;
+planeMesh.position.y -= 0.1;
 planeMesh.name = "PLANE";
 scene.add(planeMesh);
 
 
 const grid = new THREE.GridHelper(N, N);
 grid.name = "GRID";
-grid.position.y += 0.05;
+grid.position.y -= 0.05;
 scene.add(grid);
 
 const highlightMesh = new THREE.Mesh(
@@ -120,7 +156,8 @@ window.addEventListener("mousemove", function (e) {
             .copy(intersect.point)
             .floor()
             .addScalar(0.5);
-        highlightMesh.position.set(highlightPos.x, 0, highlightPos.z);
+
+        highlightMesh.position.set(highlightPos.x, -0.07, highlightPos.z);
 
         const objectExist = objects.find(function (object) {
             return (
@@ -129,8 +166,8 @@ window.addEventListener("mousemove", function (e) {
             );
         });
 
-        if (!objectExist) highlightMesh.material.color.setHex(0x808080);
-        else highlightMesh.material.color.setHex(0xff0000);
+        if (!objectExist && highlightPos.x >= l && highlightPos.x <= u && highlightPos.z >= l && highlightPos.z <= u) highlightMesh.material.color.setHex(0x808080);
+        else highlightMesh.material.color.setHex(0x000000);
     }
 });
 
@@ -138,13 +175,14 @@ const startBox = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
     new THREE.MeshBasicMaterial({ color: 0x00FF00 })
 );
+startBox.add(new THREE.LineSegments(new THREE.EdgesGeometry(startBox.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
 const endBox = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
     new THREE.MeshBasicMaterial({ color: 0xFF0000 })
 );
 const wallBox = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial({ color: 0xFFFFFF })
+    new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.75 })
 );
 
 const finderBox = new THREE.Mesh(
@@ -154,10 +192,81 @@ const finderBox = new THREE.Mesh(
 
 const solutionBox = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial({ color: 0x00FF00 })
+    new THREE.MeshBasicMaterial({ color: 0xFF00FF })
 );
 
+const hideBox = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshBasicMaterial({ color: 0x000000 })
+);
 
+const cornerHideBox = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshBasicMaterial({ color: 0x000000 })
+);
+//cornerHideBox.add(new THREE.LineSegments(new THREE.EdgesGeometry(cornerHideBox.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF })));
+
+
+const waveBox = new THREE.Mesh(
+    new THREE.BoxGeometry(0.7, 0.5, 0.7),
+    new THREE.MeshBasicMaterial({
+        color: 0x00FF00,
+        opacity: 1,
+        transparent: true
+    })
+);
+waveBox.add(new THREE.LineSegments(new THREE.EdgesGeometry(waveBox.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
+if (N < 21) {
+    let l2 = l;
+    let hideId = 0;
+    for (let i = 0; i < 3; i++) {
+        l2 = l;
+        while (l2 <= u) {
+            let hide = hideBox.clone();
+            let hide2 = hideBox.clone();
+            hide.position.set(l2, -0.6 - i, l - 1);
+            hide2.position.set(l - 1, -0.6 - i, l2);
+            hide.name = "HIDE" + ++hideId;
+            hide2.name = "HIDE" + ++hideId;
+            scene.add(hide);
+            scene.add(hide2);
+            l2++;
+        }
+    }
+    let u2 = u;
+    for (let i = 0; i < 3; i++) {
+        u2 = u;
+        while (u2 >= l) {
+            let hide = hideBox.clone();
+            let hide2 = hideBox.clone();
+            hide.position.set(u2, -0.6 - i, u + 1);
+            hide2.position.set(u + 1, -0.6 - i, u2);
+            hide.name = "HIDE" + ++hideId;
+            hide2.name = "HIDE" + ++hideId;
+            scene.add(hide);
+            scene.add(hide2);
+            u2--;
+        }
+    }
+    for (let i = 0; i < 3; i++) {
+        let c1 = cornerHideBox.clone();
+        c1.name = "HIDE" + ++hideId;
+        c1.position.set(u + 1, -0.6 - i, u + 1);
+        let c2 = cornerHideBox.clone();
+        c2.name = "HIDE" + ++hideId;
+        c2.position.set(u + 1, -0.6 - i, l - 1);
+        let c3 = cornerHideBox.clone();
+        c3.name = "HIDE" + ++hideId;
+        c3.position.set(l - 1, -0.6 - i, l - 1);
+        let c4 = cornerHideBox.clone();
+        c4.name = "HIDE" + ++hideId;
+        c4.position.set(l - 1, -0.6 - i, u + 1);
+        scene.add(c1);
+        scene.add(c2);
+        scene.add(c3);
+        scene.add(c4);
+    }
+}
 let objects = [];
 let boxes = [];
 let paths = null;
@@ -208,64 +317,71 @@ window.addEventListener('click', async function () {
     }
 
     if (intersects.length > 0) {
-        if (!(boxExists(boxes, highlightMesh.position.x, highlightMesh.position.z))) {
-            let boxClone = null;
-            if (startBoxPosition == null) { // must add startBox
-                boxClone = startBox.clone()
-                boxClone.position.copy(highlightMesh.position);
-                boxClone.position.y -= 0.5;
-                boxClone.name = "START";
-                boxClone.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxClone.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
-                boxes.push(boxClone);
-                scene.add(boxClone);
-                if (startBoxPosition == null) {
-                    startBoxPosition = [boxClone.position.x, boxClone.position.z];
+        if (highlightMesh.position.x >= l && highlightMesh.position.x <= u && highlightMesh.position.z >= l && highlightMesh.position.z <= u) {
+            if (!(boxExists(boxes, highlightMesh.position.x, highlightMesh.position.z))) {
+                let boxClone = null;
+                if (startBoxPosition == null) { // must add startBox
+                    boxClone = startBox.clone()
+                    boxClone.position.copy(highlightMesh.position);
+                    boxClone.position.y -= 0.5;
+                    boxClone.name = "START";
+                    boxClone.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxClone.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
+                    boxes.push(boxClone);
+                    scene.add(boxClone);
+                    if (startBoxPosition == null) {
+                        startBoxPosition = [boxClone.position.x, boxClone.position.z];
+                    }
+                } else if (endBoxPosition == null) { // must add endBox
+                    boxClone = endBox.clone()
+                    boxClone.position.copy(highlightMesh.position);
+                    boxClone.position.y -= 0.5;
+                    boxClone.name = "END";
+                    boxClone.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxClone.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
+                    boxes.push(boxClone);
+                    scene.add(boxClone);
+                    if (endBoxPosition == null) {
+                        endBoxPosition = [boxClone.position.x, boxClone.position.z];
+                    }
+                } else { // free to add wallBox
+                    boxClone = wallBox.clone()
+                    boxClone.position.copy(highlightMesh.position);
+                    boxClone.position.y -= 0.5;
+                    boxClone.name = "WALL" + wallId;
+                    boxClone.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxClone.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
+                    boxes.push(boxClone);
+                    scene.add(boxClone);
+                    wallId++;
                 }
-            } else if (endBoxPosition == null) { // must add endBox
-                boxClone = endBox.clone()
-                boxClone.position.copy(highlightMesh.position);
-                boxClone.position.y -= 0.5;
-                boxClone.name = "END";
-                boxClone.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxClone.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
-                boxes.push(boxClone);
-                scene.add(boxClone);
-                if (endBoxPosition == null) {
-                    endBoxPosition = [boxClone.position.x, boxClone.position.z];
+                if (ani) {
+                    for (let i = 0; i < 50; i++) {
+                        await sleep(1);
+                        scene.getObjectByName(boxClone.name).position.y += 0.02;
+                    }
                 }
-            } else { // free to add wallBox
-                boxClone = wallBox.clone()
-                boxClone.position.copy(highlightMesh.position);
-                boxClone.position.y -= 0.5;
-                boxClone.name = "WALL" + wallId;
-                boxClone.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxClone.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
-                boxes.push(boxClone);
-                scene.add(boxClone);
-                wallId++;
-            }
-            for (let i = 0; i < 50; i++) {
-                await sleep(1);
-                scene.getObjectByName(boxClone.name).position.y += 0.02;
-            }
-        } else {
-            let index = boxIndex(boxes, highlightMesh.position.x, highlightMesh.position.z);
-            let boxToDelete = boxes[index];
-            if (index != -1) {
-                boxes.splice(index, 1);
-                for (let i = 0; i < 51; i++) {
-                    await sleep(1);
-                    scene.getObjectByName(boxToDelete.name).position.y -= 0.02;
-                }
-                scene.remove(boxToDelete);
+                scene.getObjectByName(boxClone.name).position.y = 0.45;
             } else {
-                console.log("Tried to get a box that doesn't exist . . .");
-            }
-            if (startBoxPosition != null && isStart(highlightMesh.position.x, highlightMesh.position.z)) {
-                startBoxPosition = null;
-            }
-            if (endBoxPosition != null && isEnd(highlightMesh.position.x, highlightMesh.position.z)) {
-                endBoxPosition = null;
-            }
+                let index = boxIndex(boxes, highlightMesh.position.x, highlightMesh.position.z);
+                let boxToDelete = boxes[index];
+                if (index != -1) {
+                    boxes.splice(index, 1);
+                    if (ani) {
+                        for (let i = 0; i < 51; i++) {
+                            await sleep(1);
+                            scene.getObjectByName(boxToDelete.name).position.y -= 0.02;
+                        }
+                    }
+                    scene.remove(boxToDelete);
+                } else {
+                    console.log("Tried to get a box that doesn't exist . . .");
+                }
+                if (startBoxPosition != null && isStart(highlightMesh.position.x, highlightMesh.position.z)) {
+                    startBoxPosition = null;
+                }
+                if (endBoxPosition != null && isEnd(highlightMesh.position.x, highlightMesh.position.z)) {
+                    endBoxPosition = null;
+                }
 
+            }
         }
     }
 });
@@ -278,6 +394,7 @@ function animate(time) {
         object.rotation.z = time / 1;
         object.position.y = 0.5 + 0.5 * Math.abs(Math.sin(time / 1000));
     });
+    //wscene.background = new THREE.Color(`rgb(${(Math.floor(Math.random() * 125) * Math.sin(time / 120)) % 255}, ${(Math.floor(Math.random() * 125) * Math.sin(time / 120)) % 255}, ${(Math.floor(Math.random() * 125) * Math.sin(time / 120)) % 255})`); 
     renderer.render(scene, camera);
 }
 
@@ -298,8 +415,12 @@ window.addEventListener('keypress', (event) => {
     } else if (code == "KeyC") {
         clearSolution();
     } else if (code == "KeyW") {
-        if (startBoxPosition != null) {
-            wave(startBoxPosition[0], startBoxPosition[1], "RAND");
+        if (ani) {
+            if (startBoxPosition != null) {
+                wave(startBoxPosition[0], startBoxPosition[1], "RAND");
+            } else {
+                flash("RED");
+            }
         } else {
             flash("RED");
         }
@@ -385,28 +506,61 @@ async function solve() {
         }
         return -1;
     }
+
+    function getDirection(c1, c2) {
+        let dx = c1[0] - c2[0];
+        let dz = c1[1] - c2[1];
+        if (dx == 1) {
+            return "E";
+        } else if (dx == -1) {
+            return "W";
+        } else if (dz == 1) {
+            return "S";
+        } else if (dz == -1) {
+            return "N";
+        }
+
+    }
     if (startBoxPosition != null && endBoxPosition != null && !solutionDrawn) {
         paths = aStar();
         if (paths != -1) {
-            /*let finder = finderBox.clone();
+            let finder = finderBox.clone();
             finder.name = "FINDER";
-            finder.position.y += 0.5;
+            finder.position.y -= 0.45;
+            finder.position.x = startBoxPosition[0];
+            finder.position.z = startBoxPosition[1];
             finder.add(new THREE.LineSegments(new THREE.EdgesGeometry(finder.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
             boxes.push(finder);
             scene.add(finder);
-            for (let i = 0; i < paths.length; i++) {
-                scene.getObjectByName("FINDER").position.setX(paths[i][0]);
-                scene.getObjectByName("FINDER").position.setZ(paths[i][1]);
-                if (i == 0) {
-                    scene.getObjectByName("FINDER").position.y = -0.5;
-                    for (let j = 0; j < 25; j++) {
-                        await sleep(1000 / 600);
-                        scene.getObjectByName("FINDER").position.y += 0.04;
+            for (let j = 0; j < 26; j++) {
+                scene.getObjectByName(finder.name).position.y += 0.04;
+                await sleep(1);
+            }
+            for (let i = -1; i < paths.length - 1; i++) {
+                if (i == -1) {
+                    await rotateCube(getDirection(startBoxPosition, paths[0]), finder);
+                } else {
+                    await rotateCube(getDirection(paths[i], paths[i + 1]), finder);
+                    let solution = solutionBox.clone();
+                    solution.name = "SOL" + ++solId;
+                    console.log(paths[i])
+                    solution.position.x = paths[i][0];
+                    solution.position.z = paths[i][1];
+                    solution.position.y -= 0.5;
+                    solution.add(new THREE.LineSegments(new THREE.EdgesGeometry(solution.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
+                    boxes.push(solution);
+                    scene.add(solution);
+                    if (ani) {
+                        for (let j = 0; j < 7; j++) {
+                            scene.getObjectByName(solution.name).position.y += 0.15;
+                            await sleep(1);
+                        }
+                        scene.getObjectByName(solution.name).position.y = 0.45;
                     }
                 }
-                await sleep(125);
-            }*/
-            for (let i = 0; i < paths.length; i++) {
+            }
+
+            /*for (let i = 0; i < paths.length; i++) {
                 let solution = solutionBox.clone();
                 solution.name = "SOL" + ++solId;
                 console.log(paths[i])
@@ -416,14 +570,18 @@ async function solve() {
                 solution.add(new THREE.LineSegments(new THREE.EdgesGeometry(solution.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
                 boxes.push(solution);
                 scene.add(solution);
-                for (let j = 0; j < 13; j++) {
-                    scene.getObjectByName(solution.name).position.y += 0.08;
-                    await sleep(1);
+                if (ani) {
+                    for (let j = 0; j < 13; j++) {
+                        scene.getObjectByName(solution.name).position.y += 0.08;
+                        await sleep(1);
+                    }
                 }
-                solution.position.y = 0.5;
-            }
+                solution.position.y = 0.45;
+            }*/
             solutionDrawn = true;
-            //flash("GREEN");
+            if (!ani) {
+                flash("GREEN");
+            }
         } else {
             flash("RED");
         }
@@ -433,12 +591,23 @@ async function solve() {
 }
 
 async function reset() {
-    for (let i = 0; i < boxes.length; i++) {
-        for (let j = 0; j < 50; j++) {
-            await sleep(1);
-            scene.getObjectByName(boxes[i].name).position.y -= 0.02;
+    if (ani) {
+        async function recurse(i) {
+            if (i != boxes.length) {
+                recurse(i + 1);
+                const name = boxes[i].name;
+                for (let j = 0; j < 210; j++) {
+                    scene.getObjectByName(name).position.y -= 0.0075;
+                    await sleep(1);
+                }
+                scene.remove(scene.getObjectByName(name));
+            }
         }
-        scene.remove(boxes[i]);
+
+        await recurse(0);
+    }
+    for (let i = 0; i < boxes.length; i++) {
+        scene.remove(scene.getObjectByName(boxes[i].name));
     }
     objects = [];
     boxes = [];
@@ -452,33 +621,51 @@ async function reset() {
 
 async function clearSolution() {
     if (paths != null) {
-        let finderIndex = -1;
-        let solutionIndicies = [];
-        for (let i = 0; i < boxes.length; i++) {
-            if (boxes[i].name == "FINDER") {
-                for (let j = 0; j < 26; j++) {
-                    await sleep(1);
-                    scene.getObjectByName(boxes[i].name).position.y -= 0.04;
-                }
-                scene.remove(scene.getObjectByName(boxes[i].name));
-                await sleep(1);
-            } else if (boxes[i].name.substring(0, 3) == "SOL") {
-                for (let j = 0; j < 13; j++) {
-                    await sleep(1);
-                    scene.getObjectByName(boxes[i].name).position.y -= 0.08;
-                }
-                scene.remove(scene.getObjectByName(boxes[i].name));
+        if (ani) {
+            let finderIndex = -1;
+            let solutionIndicies = [];
+            for (let i = 0; i < boxes.length; i++) {
+                if (boxes[i].name.substring(0, 3) == "SOL") {
+                    for (let j = 0; j < 13; j++) {
+                        await sleep(1);
+                        scene.getObjectByName(boxes[i].name).position.y -= 0.08;
+                    }
+                    scene.remove(scene.getObjectByName(boxes[i].name));
+                } 
             }
+            boxes = boxes.filter(function (box) {
+                return box.name.substring(0, 3) !== "SOL";
+            });
+
+            for (let i = 0; i < boxes.length; i++) {
+                if (boxes[i].name == "FINDER") {
+                    for (let j = 0; j < 13; j++) {
+                        await sleep(1);
+                        scene.getObjectByName(boxes[i].name).position.y -= 0.08;
+                    }
+                    scene.remove(scene.getObjectByName(boxes[i].name));
+                    await sleep(1);
+                }
+            }
+            boxes = boxes.filter(function (box) {
+                return box.name !== "FINDER";
+            });
+            solutionDrawn = false;
+            paths = null;
+            wave(endBoxPosition[0], endBoxPosition[1], "G");
+        } else {
+            for (let i = 0; i < boxes.length; i++) {
+                if (boxes[i].name.substring(0, 3) == "SOL") {
+                    scene.remove(scene.getObjectByName(boxes[i].name));
+                }
+            }
+            boxes = boxes.filter(function (box) {
+                return box.name.substring(0, 3) !== "SOL"
+            });
+
+            solutionDrawn = false;
+            paths = null;
         }
-        boxes = boxes.filter(function (box) {
-            return box.name.substring(0, 3) !== "SOL";
-        });
-        boxes = boxes.filter(function (box) {
-            return box.name !== "FINDER";
-        });
-        solutionDrawn = false;
-        paths = null;
-        wave(endBoxPosition[0], endBoxPosition[1], "G");
     } else {
         flash("RED");
     }
@@ -550,36 +737,136 @@ async function wave(x, z, type) {
     async function dfs(x, z, opacity) {
         if (x >= l && x <= u && z >= l && z <= u && opacity > 0 && !inVisited(visited, x, z) && !isWall([x, z])) {
             waveId++;
-            const mesh = Mesh.clone();
+            const mesh = waveBox.clone();
             mesh.name = "WAVE" + waveId;
             mesh.position.x = x;
-            mesh.position.y = -0.2;
+            mesh.position.y = -0.5;
             mesh.position.z = z
-            mesh.material.opacity = opacity;
-            scene.add(mesh);
+            mesh.material.opacity = opacity
             if (type == "G") {
                 mesh.material.color.setHex(0x10FF10);
+                scene.add(mesh);
             } else if (type == "RAND") {
-                scene.getObjectByName("WAVE" + waveId).material.color = new THREE.Color(`rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)} ,${Math.floor(Math.random() * 256)})`);
+                mesh.material.color = new THREE.Color(`rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)} ,${Math.floor(Math.random() * 256)})`);
+                scene.add(mesh);
             }
+            waveId++;
             visited.push([x, z]);
-            for (let i = 0; i < 14; i++) {
-                mesh.position.y += 0.07;
-                await sleep(1);
+            for (let i = 0; i < 5; i++) {
+                mesh.position.y += 0.30;
+                await sleep(10);
             }
-            
-
-            dfs(x + 1, z, opacity - 0.04);
-            dfs(x, z + 1, opacity - 0.04);
-            dfs(x - 1, z, opacity - 0.04);
-            dfs(x, z - 1, opacity - 0.04);
-            for (let i = 0; i < 57; i++) {
-                mesh.position.y -= 0.0175;
-                await sleep(3.75);
+            dfs(x + 1, z, opacity - .03);
+            dfs(x, z + 1, opacity - .03);
+            dfs(x - 1, z, opacity - .03);
+            dfs(x, z - 1, opacity - .03);
+            for (let i = 0; i < 25; i++) {
+                mesh.position.y -= 0.06;
+                await sleep(10);
             }
             scene.remove(mesh);
-            waveId++;
         }
     }
     dfs(x, z, 1);
+}
+
+
+async function rotateCube(direction, box) {
+    function inVisited(vs, x, z) {
+        for (let i = 0; i < vs.length; i++) {
+            if (vs[i][0] == x && vs[i][1] == z) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function getWalls() {
+        let wallCords = [];
+        for (let i = 0; i < boxes.length; i++) {
+            if (boxes[i].name.substring(0, 4) == "WALL") {
+                wallCords.push([boxes[i].position.x, boxes[i].position.z]);
+            }
+        }
+        return wallCords;
+    }
+
+    function isWall(cord) {
+        let cords = getWalls();
+        for (let i = 0; i < cords.length; i++) {
+            if (cord[0] == cords[i][0] && cord[1] == cords[i][1]) {
+                return true;
+            }
+        }
+        return false;
+    }
+    if (direction == "N") {
+        let z = scene.getObjectByName(box.name).position.z + 1;
+        if (!isWall([scene.getObjectByName(box.name).position.x, z]) && z >= l && z <= u) {
+            for (let i = 0; i < 51; i++) {
+                scene.getObjectByName(box.name).rotateX(((90 * (Math.PI / 180)) / 51));
+                scene.getObjectByName(box.name).position.z += (1 / 51);
+                scene.getObjectByName(box.name).position.y = ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45;
+                await sleep(2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45));
+            }
+            scene.getObjectByName(box.name).position.z = Math.ceil(scene.getObjectByName(box.name).position.z) - 0.5;
+            scene.getObjectByName(box.name).position.y = 0.45;
+            scene.getObjectByName(box.name).rotation.set(0, 0, 0);
+            console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`)
+        } else {
+            flash("RED");
+        }
+    }
+    else if (direction == "E") {
+        // Z + 1
+        let x = scene.getObjectByName(box.name).position.x - 1;
+        if (!isWall([x, scene.getObjectByName(box.name).position.z])) {
+            for (let i = 0; i < 51; i++) {
+                scene.getObjectByName(box.name).rotateZ((90 * (Math.PI / 180)) / 51);
+                scene.getObjectByName(box.name).position.x -= (1 / 51);
+                scene.getObjectByName(box.name).position.y = ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45;
+                await sleep(2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45));
+            }
+            scene.getObjectByName(box.name).position.x = Math.ceil(scene.getObjectByName(box.name).position.x) - 0.5;
+            scene.getObjectByName(box.name).position.y = 0.45;
+            scene.getObjectByName(box.name).rotation.set(0, 0, 0);
+            console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`);
+        } else {
+            flash("RED");
+        }
+    }
+    else if (direction == "S") {
+        let z = scene.getObjectByName(box.name).position.z - 1;
+        if (!isWall([scene.getObjectByName(box.name).position.x, z]) && z >= l && z <= u) {
+            for (let i = 0; i < 51; i++) {
+                scene.getObjectByName(box.name).rotateX(-(90 * (Math.PI / 180)) / 51);
+                scene.getObjectByName(box.name).position.z -= (1 / 51);
+                scene.getObjectByName(box.name).position.y = ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45;
+                await sleep(2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45));
+            }
+            scene.getObjectByName(box.name).position.z = Math.ceil(scene.getObjectByName(box.name).position.z) - 0.5;
+            scene.getObjectByName(box.name).position.y = 0.45;
+            scene.getObjectByName(box.name).rotation.set(0, 0, 0);
+            console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`)
+        } else {
+            flash("RED");
+        }
+    }
+    else if (direction == "W") {
+        let x = scene.getObjectByName(box.name).position.x + 1;
+        if (!isWall([x, scene.getObjectByName(box.name).position.z])) {
+            for (let i = 0; i < 51; i++) {
+                scene.getObjectByName(box.name).rotateZ(-(90 * (Math.PI / 180)) / 51);
+                scene.getObjectByName(box.name).position.x += (1 / 51);
+                scene.getObjectByName(box.name).position.y = ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45;
+                await sleep(2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45));
+            }
+            scene.getObjectByName(box.name).position.x = Math.ceil(scene.getObjectByName(box.name).position.x) - 0.5;
+            scene.getObjectByName(box.name).position.y = 0.45;
+            scene.getObjectByName(box.name).rotation.set(0, 0, 0);
+            console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`);
+        } else {
+            flash("RED");
+        }
+    }
 }
