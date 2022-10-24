@@ -8,7 +8,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const N = 10; // NxN board size
 const ani = true; // enable / disable animations
-const paintTrail = false; // enable / disable paint trails for rolling finder block
+const paintTrail = true; // enable / disable paint trails for rolling finder block
 
 let l = -(N / 2) + 0.5; // lower bound
 let u = N / 2 - 0.5; // upper bound
@@ -148,26 +148,26 @@ window.addEventListener("mousemove", function (e) {
 
 // Defining the different type of boxes
 const startBox = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.BoxGeometry(0.75, 0.75, 0.75),
     new THREE.MeshBasicMaterial({ color: 0x00FF00 })
 );
 startBox.add(new THREE.LineSegments(new THREE.EdgesGeometry(startBox.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
 const endBox = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.BoxGeometry(0.75, 0.75, 0.75),
     new THREE.MeshBasicMaterial({ color: 0xFF0000 })
 );
 const wallBox = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.BoxGeometry(0.75, 0.75, 0.75),
     new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.75 })
 );
 
 const finderBox = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.BoxGeometry(0.751, 0.751, 0.751),
     new THREE.MeshBasicMaterial({ color: 0xFF00FF })
 );
 
 const solutionBox = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.BoxGeometry(0.75, 0.75, 0.75),
     new THREE.MeshBasicMaterial({ color: 0xFF00FF })
 );
 
@@ -510,16 +510,18 @@ async function solve() {
         if (paths != -1) {
             let finder = finderBox.clone();
             finder.name = "FINDER";
-            finder.position.y -= 0.45;
+            finder.position.y -= 0.55;
             finder.position.x = startBoxPosition[0];
             finder.position.z = startBoxPosition[1];
             finder.add(new THREE.LineSegments(new THREE.EdgesGeometry(finder.geometry), new THREE.LineBasicMaterial({ color: 0x000000 })));
             boxes.push(finder);
             scene.add(finder);
+            await sleep(100);
             for (let j = 0; j < 26; j++) {
                 scene.getObjectByName(finder.name).position.y += 0.04;
-                await sleep(1);
+                await sleep(10);
             }
+            await sleep(100);
             for (let i = -1; i < paths.length - 1; i++) {
                 if (i == -1) {
                     await rotateCube(getDirection(startBoxPosition, paths[0]), finder);
@@ -589,10 +591,9 @@ async function reset() {
 
 // Function to clear a solution-state if it is present
 async function clearSolution() {
-    if (paths != null) {
+    console.log(paths);
+    if (paths != null & paths != -1) {
         if (ani) {
-            let finderIndex = -1;
-            let solutionIndicies = [];
             for (let i = 0; i < boxes.length; i++) {
                 if (boxes[i].name.substring(0, 3) == "SOL") {
                     for (let j = 0; j < 13; j++) {
@@ -780,11 +781,12 @@ async function rotateCube(direction, box) {
                 scene.getObjectByName(box.name).position.z += (1 / 51);
                 scene.getObjectByName(box.name).position.y = ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45;
                 await sleep(2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45));
+                console.log((2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45)) * 1000);
             }
             scene.getObjectByName(box.name).position.z = Math.ceil(scene.getObjectByName(box.name).position.z) - 0.5;
             scene.getObjectByName(box.name).position.y = 0.45;
             scene.getObjectByName(box.name).rotation.set(0, 0, 0);
-            console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`)
+            //console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`)
         } else {
             flash("RED");
         }
@@ -798,11 +800,12 @@ async function rotateCube(direction, box) {
                 scene.getObjectByName(box.name).position.x -= (1 / 51);
                 scene.getObjectByName(box.name).position.y = ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45;
                 await sleep(2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45));
+                console.log((2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45)) * 1000);
             }
             scene.getObjectByName(box.name).position.x = Math.ceil(scene.getObjectByName(box.name).position.x) - 0.5;
             scene.getObjectByName(box.name).position.y = 0.45;
             scene.getObjectByName(box.name).rotation.set(0, 0, 0);
-            console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`);
+            //console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`);
         } else {
             flash("RED");
         }
@@ -815,11 +818,12 @@ async function rotateCube(direction, box) {
                 scene.getObjectByName(box.name).position.z -= (1 / 51);
                 scene.getObjectByName(box.name).position.y = ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45;
                 await sleep(2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45));
+                console.log((2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45)) * 1000);
             }
             scene.getObjectByName(box.name).position.z = Math.ceil(scene.getObjectByName(box.name).position.z) - 0.5;
             scene.getObjectByName(box.name).position.y = 0.45;
             scene.getObjectByName(box.name).rotation.set(0, 0, 0);
-            console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`)
+            //console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`)
         } else {
             flash("RED");
         }
@@ -832,11 +836,12 @@ async function rotateCube(direction, box) {
                 scene.getObjectByName(box.name).position.x += (1 / 51);
                 scene.getObjectByName(box.name).position.y = ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45;
                 await sleep(2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45));
+                console.log((2 / (1 / ((Math.sin(i * (Math.PI / 51))) / 2) + 0.45)) * 1000);
             }
             scene.getObjectByName(box.name).position.x = Math.ceil(scene.getObjectByName(box.name).position.x) - 0.5;
             scene.getObjectByName(box.name).position.y = 0.45;
             scene.getObjectByName(box.name).rotation.set(0, 0, 0);
-            console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`);
+            //console.log(`X: ${scene.getObjectByName(box.name).position.x} Y: ${scene.getObjectByName(box.name).position.y} Z: ${scene.getObjectByName(box.name).position.z}`);
         } else {
             flash("RED");
         }
