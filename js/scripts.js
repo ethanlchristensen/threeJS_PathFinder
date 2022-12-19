@@ -1,8 +1,5 @@
-import * as THREE from "three";
-import { GridHelper } from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import * as THREE from  "https://cdn.skypack.dev/three@0.132.2";
+import { OrbitControls } from "https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js";
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
