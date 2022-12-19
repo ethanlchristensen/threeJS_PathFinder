@@ -1,7 +1,7 @@
 # ThreeJS Path Visualization
 
 Project is hosted live here
-<a href="https://ethanlchristensen.github.io/">PathFinder</a>
+<a href="https://ethanlchristensen.github.io/threeJS_PathFinder/">PathFinder</a>
 
 ## Description
 This project was meant to learn threeJS while also implementing my recent studies (Fall 2022) in uninformed and informed search algorithms.
