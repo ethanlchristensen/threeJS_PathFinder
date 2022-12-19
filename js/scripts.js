@@ -1,5 +1,6 @@
-import * as THREE from  "https://cdn.skypack.dev/three@0.132.2";
+import * as THREE from "https://cdn.skypack.dev/three@0.132.2";
 import { OrbitControls } from "https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js";
+
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -178,6 +179,16 @@ const cornerHideBox = new THREE.Mesh(
     new THREE.MeshBasicMaterial({ color: 0x000000 })
 );
 
+const fringeBox = new THREE.Mesh(
+    new THREE.BoxGeometry(0.75, 0.75, 0.75),
+    new THREE.MeshBasicMaterial({ color: 0x1A1A1A })
+);
+
+const fringeBox2 = new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, 0.5, 0.5),
+    new THREE.MeshBasicMaterial({ color: 0x11ff11 })
+);
+
 const waveBox = new THREE.Mesh(
     new THREE.BoxGeometry(0.7, 0.5, 0.7),
     new THREE.MeshBasicMaterial({
@@ -249,6 +260,7 @@ let startBoxPosition = null;
 let endBoxPosition = null;
 let wallId = 0;
 let solId = 0;
+let fringeId = 0;
 let solutionDrawn = false;
 
 // Creates a box when a tile is clicked. Start and End boxes have priority
@@ -386,8 +398,13 @@ window.addEventListener("resize", function () {
 // Keyboard controls
 window.addEventListener('keypress', (event) => {
     let code = event.code;
-    if (code == "Enter") {
-        solve();
+    console.log(code);
+    if (code == "KeyA") {
+        solve("A");
+    } else if (code == "KeyD") {
+        solve("D");
+    } else if (code == "KeyB") {
+        solve("B");
     } else if (code == "KeyR") {
         reset();
     } else if (code == "KeyC") {
@@ -406,7 +423,7 @@ window.addEventListener('keypress', (event) => {
 });
 
 // Solve the maze
-async function solve() {
+async function solve(key) {
     function getWalls() {
         let wallCords = [];
         for (let i = 0; i < boxes.length; i++) {
@@ -440,7 +457,128 @@ async function solve() {
         return Math.abs(c1[0] - c2[0]) + Math.abs(c1[1] - c1[1]);
     }
 
-    function aStar() {
+    async function dfs() {
+        const visited = [];
+        var stack = [];
+        stack.push([[startBoxPosition[0], startBoxPosition[1]], []]);
+        while (stack.Length != 0) {
+            let tmp = stack.pop();
+            let state = tmp[0];
+            let actions = tmp[1];
+            if (!isIn(visited, state) && !isWall(state)) {
+                visited.push(state);
+                if (state[0] == endBoxPosition[0] && state[1] == endBoxPosition[1]) {
+                    return actions;
+                } else {
+                    let x = state[0];
+                    let z = state[1];
+                    let x1 = state[0] + 1;
+                    let z1 = state[1] + 1;
+                    let x2 = state[0] - 1;
+                    let z2 = state[1] - 1;
+                    if (x1 <= u && x1 >= l) {
+                        let updatedActions = actions.concat([[x1, z]]);
+                        stack.push([[x1, z], updatedActions]);
+                    }
+                    if (z1 <= u && z1 >= l) {
+                        let updatedActions = actions.concat([[x, z1]]);
+                        stack.push([[x, z1], updatedActions]);
+                    }
+                    if (x2 <= u && x2 >= l) {
+                        let updatedActions = actions.concat([[x2, z]]);
+                        stack.push([[x2, z], updatedActions]);
+                    }
+                    if (z2 <= u && z2 >= l) {
+                        let updatedActions = actions.concat([[x, z2]]);
+                        stack.push([[x, z2], updatedActions]);
+                    }
+                    let fringe = fringeBox.clone();
+                    let fringe2 = fringeBox2.clone();
+                    fringe.name = "FRINGE" + ++fringeId;
+                    fringe2.name = "FRINGE" + ++fringeId;
+                    //console.log(fringe.name + " " + fringe2.name);
+                    fringe.position.set(x, -0.5, z);
+                    fringe2.position.set(x, -0.5, z);
+                    scene.add(fringe);
+                    scene.add(fringe2);
+                    boxes.push(fringe);
+                    boxes.push(fringe2);
+                    for (let j = 0; j < 6; j++) {
+                        scene.getObjectByName(fringe.name).position.y += 0.01;
+                        await sleep(1);
+                    }
+                    for (let j = 0; j < 13; j++) {
+                        scene.getObjectByName(fringe2.name).position.y += 0.015;
+                        await sleep(1);
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+
+    async function bfs() {
+        const visited = [];
+        var stack = [];
+        stack.push([[startBoxPosition[0], startBoxPosition[1]], []]);
+        while (stack.Length != 0) {
+            let tmp = stack.shift();
+            let state = tmp[0];
+            let actions = tmp[1];
+            if (!isIn(visited, state) && !isWall(state)) {
+                visited.push(state);
+                if (state[0] == endBoxPosition[0] && state[1] == endBoxPosition[1]) {
+                    return actions;
+                } else {
+                    let x = state[0];
+                    let z = state[1];
+                    let x1 = state[0] + 1;
+                    let z1 = state[1] + 1;
+                    let x2 = state[0] - 1;
+                    let z2 = state[1] - 1;
+                    if (x1 <= u && x1 >= l) {
+                        let updatedActions = actions.concat([[x1, z]]);
+                        stack.push([[x1, z], updatedActions]);
+                    }
+                    if (z1 <= u && z1 >= l) {
+                        let updatedActions = actions.concat([[x, z1]]);
+                        stack.push([[x, z1], updatedActions]);
+                    }
+                    if (x2 <= u && x2 >= l) {
+                        let updatedActions = actions.concat([[x2, z]]);
+                        stack.push([[x2, z], updatedActions]);
+                    }
+                    if (z2 <= u && z2 >= l) {
+                        let updatedActions = actions.concat([[x, z2]]);
+                        stack.push([[x, z2], updatedActions]);
+                    }
+                    let fringe = fringeBox.clone();
+                    let fringe2 = fringeBox2.clone();
+                    fringe.name = "FRINGE" + ++fringeId;
+                    fringe2.name = "FRINGE" + ++fringeId;
+                    //console.log(fringe.name + " " + fringe2.name);
+                    fringe.position.set(x, -0.5, z);
+                    fringe2.position.set(x, -0.5, z);
+                    scene.add(fringe);
+                    scene.add(fringe2);
+                    boxes.push(fringe);
+                    boxes.push(fringe2);
+                    for (let j = 0; j < 6; j++) {
+                        scene.getObjectByName(fringe.name).position.y += 0.01;
+                        await sleep(1);
+                    }
+                    for (let j = 0; j < 13; j++) {
+                        scene.getObjectByName(fringe2.name).position.y += 0.015;
+                        await sleep(1);
+                    }
+                    //console.log(fringe.position.x + ", " + fringe.position.z + ", " + fringe.position.y + " : " + fringe2.position.x + ", " + fringe2.position.z + ", " + fringe2.position.y);
+                }
+            }
+        }
+        return -1;
+    }
+
+    async function aStar() {
         const visited = [];
         const Q = new PriorityQueue();
         Q.enqueue([[startBoxPosition[0], startBoxPosition[1]], [], 0], 0);
@@ -461,24 +599,43 @@ async function solve() {
                     let x2 = state[0] - 1;
                     let z2 = state[1] - 1;
                     if (x1 <= u && x1 >= l) {
-                        heuristicCost = manhattan(endBoxPosition, [x1, z]);
+                        let heuristicCost = manhattan(endBoxPosition, [x1, z]);
                         let updatedActions = actions.concat([[x1, z]]);
                         Q.enqueue([[x1, z], updatedActions, cost + 1], cost + 1 + heuristicCost);
                     }
-                    if (x2 <= u && x2 >= l) {
-                        heuristicCost = manhattan(endBoxPosition, [x2, z]);
-                        let updatedActions = actions.concat([[x2, z]]);
-                        Q.enqueue([[x2, z], updatedActions, cost + 1], cost + 1 + heuristicCost);
-                    }
                     if (z1 <= u && z1 >= l) {
-                        heuristicCost = manhattan(endBoxPosition, [x, z1]);
+                        let heuristicCost = manhattan(endBoxPosition, [x, z1]);
                         let updatedActions = actions.concat([[x, z1]]);
                         Q.enqueue([[x, z1], updatedActions, cost + 1], cost + 1 + heuristicCost);
                     }
+                    if (x2 <= u && x2 >= l) {
+                        let heuristicCost = manhattan(endBoxPosition, [x2, z]);
+                        let updatedActions = actions.concat([[x2, z]]);
+                        Q.enqueue([[x2, z], updatedActions, cost + 1], cost + 1 + heuristicCost);
+                    }
                     if (z2 <= u && z2 >= l) {
-                        heuristicCost = manhattan(endBoxPosition, [x, z2]);
+                        let heuristicCost = manhattan(endBoxPosition, [x, z2]);
                         let updatedActions = actions.concat([[x, z2]]);
                         Q.enqueue([[x, z2], updatedActions, cost + 1], cost + 1 + heuristicCost);
+                    }
+                    let fringe = fringeBox.clone();
+                    let fringe2 = fringeBox2.clone();
+                    fringe.name = "FRINGE" + ++fringeId;
+                    fringe2.name = "FRINGE" + ++fringeId;
+                    //console.log(fringe.name + " " + fringe2.name);
+                    fringe.position.set(x, -0.5, z);
+                    fringe2.position.set(x, -0.5, z);
+                    scene.add(fringe);
+                    scene.add(fringe2);
+                    boxes.push(fringe);
+                    boxes.push(fringe2);
+                    for (let j = 0; j < 6; j++) {
+                        scene.getObjectByName(fringe.name).position.y += 0.01;
+                        await sleep(1);
+                    }
+                    for (let j = 0; j < 13; j++) {
+                        scene.getObjectByName(fringe2.name).position.y += 0.015;
+                        await sleep(1);
                     }
                 }
             }
@@ -503,7 +660,13 @@ async function solve() {
 
     // After solving, draw the path returned by astar
     if (startBoxPosition != null && endBoxPosition != null && !solutionDrawn) {
-        paths = aStar();
+        if (key == "A") {
+            paths = await aStar();
+        } else if (key == "D") {
+            paths = await dfs();
+        } else if (key == "B") {
+            paths = await bfs();
+        }
         if (paths != -1) {
             let finder = finderBox.clone();
             finder.name = "FINDER";
@@ -616,6 +779,15 @@ async function clearSolution() {
             }
             boxes = boxes.filter(function (box) {
                 return box.name !== "FINDER";
+            });
+            for (let i = 0; i < boxes.length; i++) {
+                if (boxes[i].name.substring(0, 3) == "FRI") {
+                    scene.remove(scene.getObjectByName(boxes[i].name));
+                    await sleep(1);
+                }
+            }
+            boxes = boxes.filter(function (box) {
+                return box.name.substring(0, 3) !== "FRI";
             });
             solutionDrawn = false;
             paths = null;
