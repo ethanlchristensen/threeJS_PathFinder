@@ -37,3 +37,4 @@ Now we can download and open up the code. Via command-line, work your way to the
 This will launch the index.html on ```localhost:1234```
 
  ** Note import the threeJS via URL will not work with something like parcel, however the project works fine with livehost in VSCODE **
+ ** Alternatvly you can `npm install three` and import the package from your local machine and use parcel. Otherwise URL imports and Liveshare with VSCODE work fine **
