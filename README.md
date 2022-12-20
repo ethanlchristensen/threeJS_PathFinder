@@ -35,3 +35,5 @@ Now we can download and open up the code. Via command-line, work your way to the
 ```>> parcel index.html```
 
 This will launch the index.html on ```localhost:1234```
+
+ ** Note import the threeJS via URL will not work with something like parcel, however the project works fine with livehost in VSCODE **
