@@ -5,6 +5,22 @@ Project is hosted live here
 
 ## Description
 This project was meant to learn threeJS while also implementing my recent studies (Fall 2022) in uninformed and informed search algorithms.
+## Usage/Examples
+- Click, hold, and drag mouse to pan around the visualizer
+- Scroll in and out to zoom in and out
+- Click on the board to place a node, the initial node will be the start node (green), the next will be the end node (red), and each subsequent node will be a wall node (white)
+- Press **A** on the keyboard to visualize **A***
+- Press **D** on the keyboard to visualize **DFS** (seems to be incorrectly implemented)
+- Press **B** on the keyboard to visualize **BFS**
+- Press **C** to clear a solution, given one is drawn on the board
+- Press **R** to clear the board of all nodes
+- Press **W** on the keyboard to visualize a **wave** animation, given the start node is present
+
+
+
+The mouse scroll wheel can be used to zoom in and out.
+
+Clicking and holding, and moving the mouse will allow you to rotate the plane in any direction.
 ## Set up
 Head to the Node.js website to download the latest version and get access to npm package installer. Next you will need to install threejs with the following command.
 
@@ -19,29 +35,3 @@ Now we can download and open up the code. Via command-line, work your way to the
 ```>> parcel index.html```
 
 This will launch the index.html on ```localhost:1234```
-
-## Usage
-The system is relatively intuitive to use. Hovering over the plane will highlight the current square you are on. Clicking will place a block. If the start block (colored green) isn't present, it will be the next one placed. If the end block (colored red) isn't present, it will be the next placed. After this, each block placed will be a wall block (colored white).
-
-```Enter```<br/>
->Initiates the path-finding algorithm. If either the start or end block is not placed, the plane will flash red and the pathfinding algorithm will not execute. If a path doesn't exist between the start and end block, the plane will flash red. If a solution is found, a path will be drawn between the two blocks and the plane will flash green. 
-
-```R```<br/>
->Reset the plane and remove all blocks.<br/>
-
-```C```<br/>
->Clear the populated solution without removing walls or start/end blocks.<br/>
->Flashes red if there is no solution on the board.<br/>
->Once complete, it will intiate a green wave across the board.<br/>
-
-```W```<br/>
->Will iniate a multi color wave such that the start block is present.<br/>
->Will flash Red otherwise.<br/>
-
-The mouse scroll wheel can be used to zoom in and out.
-
-Clicking and holding, and moving the mouse will allow you to rotate the plane in any direction.
-
-In the script.js, at the top of the file is a parameter called ```N``` for board size, ```ani``` to toggle the animations, and ```paintTrail``` to toggle a  paint trail for the rotating finder cube.
-## Current Version
-Currently, the program uses an A* path-finding algorithm. Future implementation will allow for the selection of different path-finding algorithms as well as visualizing the fringe.
